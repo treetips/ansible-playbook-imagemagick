@@ -1,0 +1,58 @@
+# ansible v2.0.0.2
+- hosts: all
+  become: no
+  vars:
+    - autoconf_dir_name: "autoconf-latest"
+    - autoconf_archive_name: "{{ autoconf_dir_name }}.tar.gz"
+    - autoconf_dl_url: "http://ftp.gnu.org/gnu/autoconf/{{ autoconf_archive_name }}"
+    - imageMagick_dir_name: "ImageMagick-latest"
+    - imageMagick_archive_name: "ImageMagick.tar.gz"
+    - imageMagick_dl_url: "http://www.imagemagick.org/download/{{ imageMagick_archive_name }}"
+  tasks:
+    - name: check already downlaoded autoconf
+      stat: path=/usr/local/src/{{ autoconf_archive_name }}
+      register: autoconf_archive
+      become: yes
+
+    - block:
+      - name: downlaod autoconf
+        get_url: url={{ autoconf_dl_url }}  dest=/usr/local/src/{{ autoconf_archive_name }}
+
+      - name: unarchive autoconf archive
+        shell: chdir=/usr/local/src mkdir -p {{ autoconf_dir_name }} && tar xzvf {{ autoconf_archive_name }} -C {{ autoconf_dir_name }} --strip-components 1
+
+      - name: configure autoconf
+        shell: chdir=/usr/local/src/{{ autoconf_dir_name }} ./configure
+
+      - name: make autoconf
+        shell: chdir=/usr/local/src/{{ autoconf_dir_name }} make
+
+      - name: make autoconf
+        shell: chdir=/usr/local/src/{{ autoconf_dir_name }} make install
+      when: autoconf_archive.stat.exists == False
+      become: yes
+
+
+    - name: check already downlaoded imagemagick
+      stat: path=/usr/local/src/{{ imageMagick_archive_name }}
+      register: imagemagick_archive
+      become: yes
+
+    - block:
+      - name: downlaod imagemagick
+        get_url: url={{ imageMagick_dl_url }}  dest=/usr/local/src/{{ imageMagick_archive_name }}
+
+      - name: unarchive imagemagick archive
+        shell: chdir=/usr/local/src mkdir -p {{ imageMagick_dir_name }} && tar xzvf {{ imageMagick_archive_name }} -C {{ imageMagick_dir_name }} --strip-components 1
+
+      # see configure options http://www.imagemagick.org/script/advanced-unix-installation.php
+      - name: configure imagemagick
+        shell: chdir=/usr/local/src/{{ imageMagick_dir_name }} ./configure
+
+      - name: make imagemagick
+        shell: chdir=/usr/local/src/{{ imageMagick_dir_name }} make
+
+      - name: make imagemagick
+        shell: chdir=/usr/local/src/{{ imageMagick_dir_name }} make install
+      when: imagemagick_archive.stat.exists == False
+      become: yes
